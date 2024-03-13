@@ -23,7 +23,7 @@ import prisma from "./../../lib/db";
 import { revalidatePath } from "next/cache";
 import { SubmitButton } from "@/app/components/SubmitButtons";
 
-export async function getData(userId: string) {
+async function getData(userId: string) {
   const data = await prisma.user.findUnique({
     where: {
       id: userId,
