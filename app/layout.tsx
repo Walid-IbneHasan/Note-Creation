@@ -9,8 +9,8 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Walid SAAS",
-  description: "A saas application ",
+  title: "Note Creation",
+  description: "An application for creating notes",
 };
 
 async function getData(userId: string) {
