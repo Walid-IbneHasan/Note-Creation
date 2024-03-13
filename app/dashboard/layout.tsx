@@ -41,19 +41,6 @@ async function getData({
       },
     });
   }
-  if (!user?.stripeCustomerId) {
-    const data = await stripe.customers.create({
-      email: email,
-    });
-    await prisma.user.update({
-      where: {
-        id: id,
-      },
-      data: {
-        stripeCustomerId: data.id,
-      },
-    });
-  }
 }
 
 export default async function DashboardLayout({
