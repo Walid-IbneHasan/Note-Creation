@@ -27,7 +27,6 @@ async function getData({
     },
     select: {
       id: true,
-      stripeCustomerId: true,
     },
   });
 
