@@ -18,47 +18,77 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { get } from "http";
 import prisma from "./../../lib/db";
 import { revalidatePath } from "next/cache";
 import { SubmitButton } from "@/app/components/SubmitButtons";
 
-async function getData(userId: string) {
-  const data = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      name: true,
-      email: true,
-      colorScheme: true,
-    },
-  });
-  return data;
+async function getData(userId: string | undefined) {
+  if (!userId) {
+    console.error("User ID is undefined");
+    return null;
+  }
+
+  try {
+    const data = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        name: true,
+        email: true,
+        colorScheme: true,
+      },
+    });
+
+    if (!data) {
+      console.warn("No data found for user ID:", userId);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return null;
+  }
 }
 
 export default async function SettingsPage() {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
-  const data = await getData(user?.id as string);
+
+  if (!user) {
+    console.error("User session is not available.");
+    return <p>Error: User session is not available.</p>;
+  }
+
+  const data = await getData(user.id);
+
+  if (!data) {
+    return <p>Error: Unable to fetch user data.</p>;
+  }
+
   async function postData(formData: FormData) {
     "use server";
 
     const name = formData.get("name") as string;
     const colorScheme = formData.get("color") as string;
 
-    await prisma.user.update({
-      where: {
-        id: user?.id,
-      },
-      data: {
-        name: name ?? undefined,
-        colorScheme: colorScheme ?? undefined,
-      },
-    });
+    try {
+      await prisma.user.update({
+        where: {
+          id: user?.id,
+        },
+        data: {
+          name: name ?? undefined,
+          colorScheme: colorScheme ?? undefined,
+        },
+      });
 
-    revalidatePath("/", "layout");
+      revalidatePath("/", "layout");
+    } catch (error) {
+      console.error("Error updating user data:", error);
+    }
   }
+
   return (
     <div className="grid items-start gap-8">
       <div className="flex items-center justify-between px-2">
@@ -73,8 +103,8 @@ export default async function SettingsPage() {
           <CardHeader>
             <CardTitle>General Data</CardTitle>
             <CardDescription>
-              Please provide general information about yourself. Please dont
-              forget to save
+              Please provide general information about yourself. Please
+              don&apos;t forget to save
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -86,7 +116,7 @@ export default async function SettingsPage() {
                   type="text"
                   id="name"
                   placeholder="Your Name"
-                  defaultValue={data?.name ?? undefined}
+                  defaultValue={data?.name ?? ""}
                 />
               </div>
               <div className="space-y-1">
@@ -97,13 +127,13 @@ export default async function SettingsPage() {
                   id="email"
                   placeholder="Your Email"
                   disabled
-                  defaultValue={data?.email as string}
+                  defaultValue={data?.email ?? ""}
                 />
               </div>
 
               <div className="space-y-1">
                 <Label>Color Scheme</Label>
-                <Select name="color" defaultValue={data?.colorScheme}>
+                <Select name="color" defaultValue={data?.colorScheme ?? ""}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a color" />
                   </SelectTrigger>
